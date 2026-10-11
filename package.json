@@ -15,6 +15,7 @@
     "dev:ui": "pnpm --filter @paperclipai/ui dev",
     "dev:mobile": "pnpm --filter @paperclipai/ui build && pnpm --filter @paperclipai/ui preview",
     "dev:both": "node scripts/dev-both.mjs",
+    "dev:agents": "zsh scripts/start-agents-local.sh --with-server",
     "prototype:dot": "pnpm --filter @paperclipai/server exec tsx scripts/dot-runner-demo.ts",
     "prototype:dot:live": "pnpm --filter @paperclipai/server exec tsx scripts/dot-runner-live.ts",
     "storybook": "pnpm --filter @paperclipai/ui storybook",
