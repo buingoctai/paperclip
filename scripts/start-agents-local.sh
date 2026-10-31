@@ -95,7 +95,7 @@ fi
 # Extract urlKey (shortname) list — filter out agents without one
 AGENT_KEYS=($(echo "$AGENTS_JSON" | python3 -c "
 import sys, json
-agents = json.load(sys.stdin)
+agents = json.loads(sys.stdin.read(), strict=False)
 for a in agents:
     key = a.get('urlKey') or ''
     if key:
