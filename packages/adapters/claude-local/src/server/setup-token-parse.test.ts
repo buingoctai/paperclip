@@ -122,6 +122,18 @@ describe("parseSetupTokenPrompt", () => {
     expect(result?.prompt).toBe(SETUP_TOKEN_PROMPT);
   });
 
+  it("does not bind a wrapped URL truncated inside the last query value", () => {
+    // `state` is the last query key, so a prefix that ends mid-`state` is still a
+    // valid URL. The parser must keep joining until the prompt follows the URL.
+    const lines = hardWrap(CLAUDE_AI_URL, 80).split("\n");
+    const truncated = lines.slice(0, -1).join("");
+    expect(truncated).not.toBe(CLAUDE_AI_URL);
+    for (const width of [72, 80, 96, 100]) {
+      const text = [PREAMBLE_LINE, hardWrap(CLAUDE_AI_URL, width), "", PROMPT_LINE].join("\n");
+      expect(parseSetupTokenPrompt(text)?.url).toBe(CLAUDE_AI_URL);
+    }
+  });
+
   it("returns the URL when the output arrives split across chunks", () => {
     // The streaming caller accumulates chunks and re-parses the whole buffer. The
     // chunk boundary falls inside the URL token with no line break, so the joined

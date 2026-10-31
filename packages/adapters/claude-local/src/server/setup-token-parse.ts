@@ -345,15 +345,26 @@ function validateAuthUrl(candidate: string): string | null {
  * URL passes once the parser joins the last fragment. Returns null when no bounded
  * join validates.
  */
-function reassembleUrl(lines: string[], startLine: number): SetupTokenUrlMatch | null {
+function reassembleUrl<T>(
+  lines: string[],
+  startLine: number,
+  bind: (match: SetupTokenUrlMatch) => T | null,
+): T | null {
   let joined = "";
+  const widths: number[] = [];
   for (let offset = 0; offset < MAX_URL_LINES && startLine + offset < lines.length; offset += 1) {
     const trimmed = lines[startLine + offset].trim();
     if (trimmed.length === 0 || !URL_CHARS_ONLY_RE.test(trimmed)) break;
     joined += trimmed;
     if (joined.length > MAX_URL_LENGTH) break;
+    widths.push(trimmed.length);
     const url = validateAuthUrl(joined);
-    if (url) return { url, endLine: startLine + offset };
+    const bound = url ? bind({ url, endLine: startLine + offset }) : null;
+    if (bound) return bound;
+    // `state` is the last query key, so a truncated prefix of a wrapped URL can
+    // already validate. Keep joining only with proof of a hard wrap: two or more
+    // full-width lines. A lone URL line followed by another line never extends.
+    if (url && (widths.length < 2 || widths.some((width) => width !== widths[0]))) return null;
   }
   return null;
 }
@@ -413,10 +424,11 @@ export function parseSetupTokenPrompt(text: string): SetupTokenPrompt | null {
     if (lineStart > MAX_PREAMBLE_TO_URL_GAP) break;
     const trimmed = lines[i].trim();
     if (!SETUP_TOKEN_AUTH_URL_PREFIXES.some((prefix) => trimmed.startsWith(prefix))) continue;
-    const match = reassembleUrl(lines, i);
-    if (!match) continue;
-    const prompt = findBrowserCodePrompt(lines, match.endLine, match.url);
-    if (prompt) return { url: match.url, prompt };
+    const found = reassembleUrl(lines, i, (match) => {
+      const prompt = findBrowserCodePrompt(lines, match.endLine, match.url);
+      return prompt ? { url: match.url, prompt } : null;
+    });
+    if (found) return found;
   }
   return null;
 }
