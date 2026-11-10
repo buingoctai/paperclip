@@ -37,16 +37,20 @@ fi
 # ── Start server in tmux (if requested) ──────────────────────────────────────
 
 if [[ "$WITH_SERVER" == "true" ]]; then
-  tmux kill-session -t "$SESSION" 2>/dev/null || true
-  tmux new-session -d -s "$SESSION" -n "server" -c "$REPO_ROOT"
-  tmux send-keys -t "$SESSION:server" "pnpm dev" Enter
+  if curl -sf "$API_BASE/api/health" &>/dev/null; then
+    echo "Server already running at $API_BASE — skipping restart."
+  else
+    tmux kill-session -t "$SESSION" 2>/dev/null || true
+    tmux new-session -d -s "$SESSION" -n "server" -c "$REPO_ROOT"
+    tmux send-keys -t "$SESSION:server" "pnpm dev" Enter
 
-  echo -n "Waiting for server at $API_BASE/api/health"
-  until curl -sf "$API_BASE/api/health" &>/dev/null; do
-    echo -n "."
-    sleep 1
-  done
-  echo " ready."
+    echo -n "Waiting for server at $API_BASE/api/health"
+    until curl -sf "$API_BASE/api/health" &>/dev/null; do
+      echo -n "."
+      sleep 1
+    done
+    echo " ready."
+  fi
 fi
 
 # ── Resolve company ID ────────────────────────────────────────────────────────
