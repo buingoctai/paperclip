@@ -694,6 +694,7 @@ export function projectService(db: Db, options: { captureWorkspaceUpdates?: bool
   };
 
   const getProjectById = async (id: string): Promise<ProjectWithGoals | null> => {
+    if (!isUuidLike(id)) return null;
     const row = await db
       .select()
       .from(projects)
